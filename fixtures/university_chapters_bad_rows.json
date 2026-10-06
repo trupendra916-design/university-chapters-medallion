@@ -1,0 +1,44 @@
+{
+  "objectIdFieldName": "OBJECTID",
+  "features": [
+    {
+      "attributes": {
+        "OBJECTID": 1001,
+        "ChapterID": "CA-TEST-001",
+        "University_Chapter": "Clean Test University",
+        "City": "Los Angeles",
+        "State": "CA"
+      },
+      "geometry": {
+        "x": -118.2437,
+        "y": 34.0522
+      }
+    },
+    {
+      "attributes": {
+        "OBJECTID": 1002,
+        "ChapterID": "CA-TEST-002",
+        "University_Chapter": "Warning Test University",
+        "City": "UNKNOWN",
+        "State": "CA"
+      },
+      "geometry": {
+        "x": -117.1611,
+        "y": 32.7157
+      }
+    },
+    {
+      "attributes": {
+        "OBJECTID": 1003,
+        "ChapterID": "CA-TEST-003",
+        "University_Chapter": "Bad Coordinate University",
+        "City": "San Jose",
+        "State": "CA"
+      },
+      "geometry": {
+        "x": 250.0,
+        "y": 37.3382
+      }
+    }
+  ]
+}
