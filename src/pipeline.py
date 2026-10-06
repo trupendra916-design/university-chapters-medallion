@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 from pyspark.sql import SparkSession
-
+from pyspark.sql import functions as F
 from transforms import (
     flatten_features,
     split_invalid_coordinates,
@@ -41,7 +41,12 @@ QUARANTINE_ROOT = (
     / "quarantine"
     / "university_chapters"
 )
-
+METRICS_ROOT = (
+    PROJECT_ROOT
+    / "lake"
+    / "metrics"
+    / "university_chapters"
+)
 FIXTURE_PATH = (
     PROJECT_ROOT
     / "fixtures"
@@ -143,7 +148,56 @@ def process_data(spark, raw, run_id):
 
     return silver, quarantine
 
+def calculate_and_write_metrics(raw, silver, quarantine, run_id):
+    """Calculate and persist per-run DQ metrics."""
 
+    rows_in = (
+        raw
+        .select(F.explode_outer("features").alias("feature"))
+        .filter(F.col("feature").isNotNull())
+        .count()
+    )
+
+    rows_quarantined = quarantine.count()
+
+    rows_warned = (
+        silver
+        .filter(F.col("dq_status") == "WARNING")
+        .count()
+    )
+
+    rows_ok = (
+        silver
+        .filter(F.col("dq_status") == "OK")
+        .count()
+    )
+
+    metrics = {
+        "run_id": run_id,
+        "rows_in": rows_in,
+        "rows_quarantined": rows_quarantined,
+        "rows_warned": rows_warned,
+        "rows_ok": rows_ok,
+    }
+
+    METRICS_ROOT.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    metrics_path = METRICS_ROOT / f"{run_id}.json"
+
+    with metrics_path.open(
+        "w",
+        encoding="utf-8",
+    ) as file:
+        json.dump(
+            metrics,
+            file,
+            indent=2,
+        )
+
+    return metrics_path, metrics
 def write_quarantine(quarantine, run_id):
     """Write hard-failure records to quarantine."""
 
@@ -246,7 +300,17 @@ def main():
             raw,
             run_id,
         )
+        metrics_path, metrics = calculate_and_write_metrics(
+    raw,
+    silver,
+    quarantine,
+    run_id,
+)
 
+        print("\n========== DQ METRICS ==========")
+        print(json.dumps(metrics, indent=2))
+        print(f"\nMetrics written to:\n{metrics_path}")
+        
         # -----------------------------------------------------
         # Write quarantine
         # -----------------------------------------------------
